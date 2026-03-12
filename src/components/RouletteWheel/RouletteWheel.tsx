@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, G } from 'react-native-svg';
 import Animated, {
   useSharedValue,
@@ -9,23 +10,19 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import type { Meal } from '../../types/meal';
-import { colors } from '../../constants/theme';
+import { instagramTheme } from '../../constants/instagramTheme';
+import { getWheelSize } from '../../utils/responsive';
 
-const { width } = Dimensions.get('window');
-const WHEEL_SIZE = Math.min(width - 48, 320);
-const CENTER = WHEEL_SIZE / 2;
-const RADIUS = CENTER - 8;
-
-// 扇区颜色（渐变感）
+// Instagram 风格扇区颜色
 const SEGMENT_COLORS = [
-  '#8B5CF6',
-  '#A78BFA',
-  '#EC4899',
-  '#F472B6',
-  '#06B6D4',
-  '#22D3EE',
-  '#8B5CF6',
-  '#A78BFA',
+  instagramTheme.colors.primary,
+  instagramTheme.colors.secondary,
+  instagramTheme.colors.tertiary,
+  instagramTheme.colors.quaternary,
+  '#C13584', // Instagram 中紫
+  '#FD1D1D', // Instagram 红
+  '#F77737', // Instagram 橙
+  '#FCAF45', // Instagram 黄
 ];
 
 function createSegmentPath(
@@ -69,6 +66,11 @@ interface RouletteWheelProps {
 }
 
 export function RouletteWheel({ meals, onSpinComplete }: RouletteWheelProps) {
+  const { width, height } = useWindowDimensions();
+  const wheelSize = useMemo(() => getWheelSize(width, height), [width, height]);
+  const center = wheelSize / 2;
+  const radius = center - 8;
+
   const rotation = useSharedValue(0);
   const isSpinning = useSharedValue(false);
 
@@ -101,9 +103,14 @@ export function RouletteWheel({ meals, onSpinComplete }: RouletteWheelProps) {
 
   if (meals.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>还没想好吃啥？</Text>
-        <Text style={styles.emptySubtext}>先加几个再说</Text>
+      <View style={[styles.emptyContainer, { width: wheelSize, height: wheelSize, borderRadius: wheelSize / 2 }]}>
+        <LinearGradient
+          colors={instagramTheme.colors.gradients.glass}
+          style={styles.emptyGradient}
+        >
+          <Text style={styles.emptyText}>还没想好吃啥？</Text>
+          <Text style={styles.emptySubtext}>先加几个再说 ✨</Text>
+        </LinearGradient>
       </View>
     );
   }
@@ -111,25 +118,25 @@ export function RouletteWheel({ meals, onSpinComplete }: RouletteWheelProps) {
   const segmentAngle = 360 / meals.length;
 
   return (
-    <View style={styles.container}>
-      {/* 指针 */}
+    <View style={[styles.container, { width: wheelSize }]}>
+      {/* 指针：在转盘上方，尖端朝下指向转盘 */}
       <View style={styles.pointer} />
-      <View style={styles.wheelWrapper}>
-        <Animated.View style={[styles.wheel, animatedStyle]}>
-          <Svg width={WHEEL_SIZE} height={WHEEL_SIZE} viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}>
+      <View style={[styles.wheelWrapper, { width: wheelSize, height: wheelSize, borderRadius: wheelSize / 2 }]}>
+        <Animated.View style={[styles.wheel, { width: wheelSize, height: wheelSize }, animatedStyle]}>
+          <Svg width={wheelSize} height={wheelSize} viewBox={`0 0 ${wheelSize} ${wheelSize}`}>
             <G>
               {meals.map((_, i) => {
                 const startAngle = i * segmentAngle;
                 const endAngle = (i + 1) * segmentAngle;
-                const d = createSegmentPath(startAngle, endAngle, CENTER, CENTER, RADIUS);
+                const d = createSegmentPath(startAngle, endAngle, center, center, radius);
                 const fill = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
-                return <Path key={i} d={d} fill={fill} stroke={colors.cardBorder} strokeWidth={1} />;
+                return <Path key={i} d={d} fill={fill} stroke={instagramTheme.colors.glass.medium} strokeWidth={1.5} />;
               })}
             </G>
           </Svg>
           <View style={styles.labelsOverlay} pointerEvents="none">
             {meals.map((meal, i) => {
-              const pos = getLabelPosition(i, meals.length, CENTER, CENTER, RADIUS);
+              const pos = getLabelPosition(i, meals.length, center, center, radius);
               return (
                 <View
                   key={meal.id}
@@ -173,9 +180,16 @@ const PressableButton = ({
     <Animated.View style={[styles.buttonWrapper, animatedBtnStyle]}>
       <Pressable
         onPress={disabled ? undefined : onPress}
-        style={({ pressed }) => [styles.spinButton, pressed && { opacity: 0.9 }]}
+        style={({ pressed }) => [pressed && { opacity: 0.9 }]}
       >
-        <Text style={styles.spinButtonText}>开转！</Text>
+        <LinearGradient
+          colors={instagramTheme.colors.gradients.modern}
+          style={styles.spinButton}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={styles.spinButtonText}>开转！</Text>
+        </LinearGradient>
       </Pressable>
     </Animated.View>
   );
@@ -188,28 +202,33 @@ const styles = StyleSheet.create({
   },
   pointer: {
     position: 'absolute',
-    top: -4,
+    top: 1, // 转盘上方合适位置
+    left: '50%',
+    marginLeft: -14, // 水平居中 (三角形宽 28)
     width: 0,
     height: 0,
-    borderLeftWidth: 12,
-    borderRightWidth: 12,
-    borderBottomWidth: 20,
+    borderLeftWidth: 14,
+    borderRightWidth: 14,
+    borderBottomWidth: 24,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: colors.pink,
+    borderBottomColor: instagramTheme.colors.primary,
+    transform: [{ rotate: '180deg' }], // 旋转 180° 使尖端朝下
     zIndex: 10,
+    shadowColor: instagramTheme.colors.shadow.colored,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   wheelWrapper: {
-    width: WHEEL_SIZE,
-    height: WHEEL_SIZE,
-    borderRadius: WHEEL_SIZE / 2,
     overflow: 'hidden',
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: instagramTheme.colors.background.secondary,
+    borderWidth: 2,
+    borderColor: instagramTheme.colors.glass.medium,
+    ...instagramTheme.shadows.floating,
   },
-  wheel: {
-    width: WHEEL_SIZE,
-    height: WHEEL_SIZE,
-  },
+  wheel: {},
   labelsOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
@@ -222,48 +241,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   labelText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '600',
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    color: instagramTheme.colors.text.primary,
+    fontSize: instagramTheme.typography.fontSize.sm,
+    fontWeight: instagramTheme.typography.fontWeight.bold,
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 3,
   },
   buttonWrapper: {
-    marginTop: 32,
+    marginTop: instagramTheme.spacing.xxxl,
   },
   spinButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 16,
+    paddingVertical: instagramTheme.spacing.lg,
+    paddingHorizontal: instagramTheme.spacing.xxxxl,
+    borderRadius: instagramTheme.borderRadius.xl,
     overflow: 'hidden',
+    ...instagramTheme.shadows.button,
   },
   spinButtonText: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text,
+    fontSize: instagramTheme.typography.fontSize.xl,
+    fontWeight: instagramTheme.typography.fontWeight.heavy,
+    color: instagramTheme.colors.text.primary,
+    textAlign: 'center',
   },
   emptyContainer: {
-    width: WHEEL_SIZE,
-    height: WHEEL_SIZE,
-    borderRadius: WHEEL_SIZE / 2,
-    backgroundColor: colors.card,
-    borderWidth: 2,
-    borderColor: colors.cardBorder,
-    borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: instagramTheme.spacing.xxl,
+    borderWidth: 2,
+    borderColor: instagramTheme.colors.glass.medium,
+    borderStyle: 'dashed',
+  },
+  emptyGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    marginBottom: 8,
+    fontSize: instagramTheme.typography.fontSize.xl,
+    fontWeight: instagramTheme.typography.fontWeight.bold,
+    color: instagramTheme.colors.text.secondary,
+    marginBottom: instagramTheme.spacing.sm,
+    textAlign: 'center',
   },
   emptySubtext: {
-    fontSize: 14,
-    color: colors.textMuted,
+    fontSize: instagramTheme.typography.fontSize.md,
+    fontWeight: instagramTheme.typography.fontWeight.medium,
+    color: instagramTheme.colors.text.tertiary,
+    textAlign: 'center',
   },
 });

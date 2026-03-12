@@ -31,6 +31,17 @@ npm start
 
 **详细说明**：参见 [运行指南.md](./运行指南.md)，包含环境准备、四种运行方式、常见问题等。
 
+## UI 设计
+
+采用 **Instagram 风格**现代化设计，参见 [Instagram风格改造说明.md](./Instagram风格改造说明.md)：
+
+- 🎨 Instagram 经典渐变色系
+- ✨ 玻璃态（Glassmorphism）效果  
+- 🌟 Spring 弹性动画交互
+- 📱 深色模式优先设计
+- 🎭 情感化文案与 Emoji
+- 📱 移动端响应式适配
+
 ## 项目结构
 
 ```

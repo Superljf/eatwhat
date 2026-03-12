@@ -1,0 +1,1 @@
+export { InstagramCard } from './InstagramCard';
