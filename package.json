@@ -4,9 +4,13 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "apk:prebuild": "npx expo prebuild -p android",
+    "apk:build": "npm run apk:prebuild && cd android && gradlew.bat assembleRelease",
+    "apk:install": "adb install -r android\\app\\build\\outputs\\apk\\release\\app-release.apk",
+    "apk": "npm run apk:build && npm run apk:install"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.6",
